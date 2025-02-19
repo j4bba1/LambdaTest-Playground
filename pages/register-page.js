@@ -16,13 +16,18 @@ exports.RegisterPage = class RegisterPage {
     this.yesNewsletter = page.getByText('Yes');
     this.noNewsletter = page.getByText('No', { exact: true });
     this.agreePolicyCheck = page.getByText('I have read and agree to the');
+    //alerts
     this.polickyCheckAlert = page.locator('//div[@class="alert alert-danger alert-dismissible"]');
+    this.fieldAlert = page.locator('//div[@class="text-danger"]')
 
     this.continueBtn = page.getByRole('button', { name: 'Continue' });
   };
 
-  async registerNewAcc(firstName, lastName, email, phone, password, passwordConfirm, subNewsletter, agreePolicy) {
+  async goTo() {
     await this.page.goto('https://ecommerce-playground.lambdatest.io/index.php?route=account/register')
+  };
+
+  async registerNewAcc(firstName, lastName, email, phone, password, passwordConfirm, subNewsletter) {
     await expect(this.page).toHaveTitle('Register Account');
     // fill in data
     await this.firstNameBox.fill(firstName);
@@ -35,17 +40,6 @@ exports.RegisterPage = class RegisterPage {
     if(subNewsletter){
         await this.yesNewsletter.check();
         await expect(this.yesNewsletter).toBeChecked();
-    };
-    //check privacy policy terms + click continue
-    if(agreePolicy){
-        await this.agreePolicyCheck.check();
-        await expect(this.agreePolicyCheck).toBeChecked();
-
-        await this.continueBtn.click();
-        await expect(this.page).toHaveTitle('Your Account Has Been Created!');
-    } else {
-        await this.continueBtn.click();
-        await expect(this.polickyCheckAlert).toBeVisible();
     };
   }
 };

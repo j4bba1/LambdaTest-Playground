@@ -1,4 +1,5 @@
 const { expect } = require('@playwright/test');
+const { log } = require('console');
 
 exports.LoginPage = class LoginPage {
 
@@ -11,4 +12,11 @@ exports.LoginPage = class LoginPage {
     this.password = page.getByRole('textbox', { name: 'Password' });
     this.loginBtn = page.getByRole('button', { name: 'Login' });
   }
+
+  async loginAccount(email, password) {
+    await this.page.goto('https://ecommerce-playground.lambdatest.io/index.php?route=account/login')
+    await this.email.fill(email);
+    await this.password.fill(password);
+    await this.loginBtn.click();
+  };
 };
