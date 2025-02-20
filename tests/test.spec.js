@@ -4,6 +4,8 @@ import { HomePage } from '../pages/home-page';
 import { RegisterPage } from '../pages/register-page';
 import { LoginPage } from '../pages/login-page';
 import { ComponentPage } from '../pages/component-page';
+import { describe } from 'node:test';
+import { CameraPage } from '../pages/camera-page';
 
 
 test.describe.skip('Registester new account and login with the registred data', () => {
@@ -76,36 +78,94 @@ test.describe.skip('Registester new account and login with the registred data', 
 });
 
 
+test.describe.configure({ mode: 'parallel'})
 
-test.describe('Buying items from shop', () => {
+test.describe('Buying the cheapest items from components page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
   });
-  test.fail('Buying cheapest component - out of stock item', async ({ page }) => {
+
+  test.fail('Buying the cheapest component - out of stock item', async ({ page }) => {
     const homePage = new HomePage(page);
     const componentPage = new ComponentPage(page);
 
     await homePage.goToComponentPage();
     await componentPage.pickCheapestItem();
+    //wait for the page load
+    await page.waitForTimeout(2000);
+    await componentPage.outOfStock.check();
+    await componentPage.outOfStock.isChecked();
 
-    await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('Nikon D300');
-    await page.locator('#mz-product-grid-image-31-212408').click();
+    await page.waitForTimeout(2000);
+    await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('iPhone');
+    await page.locator('//a[@class="text-ellipsis-2"]').first().click();
     let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
-    await expect(addBtn).toHaveText('Add to Cart');
+    await expect(addBtn).toHaveText('Out of Stock');
     await addBtn.click();
   });
 
-  test('Buying cheapest component - in stock item', async ({ page }) => {
+  test('Buying the cheapest component - in stock item', async ({ page }) => {
     const homePage = new HomePage(page);
     const componentPage = new ComponentPage(page);
 
     await homePage.goToComponentPage();
     await componentPage.pickCheapestItem();
+    //wait for the page load
+    await page.waitForTimeout(2000);
+    await componentPage.inStock.check();
+    await componentPage.inStock.isChecked();
 
-    await expect(page.locator('//a[@class="text-ellipsis-2"]').nth(1)).toHaveText('Nikon D300');
-    await page.locator('#mz-product-grid-image-63-212408').click();
+    await page.waitForTimeout(2000);
+    await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('Nikon D300');
+    await page.locator('//a[@class="text-ellipsis-2"]').first().click();
     let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
     await expect(addBtn).toHaveText('Add to Cart');
     await addBtn.click();
+    await expect(page.locator('#notification-box-top')).toBeVisible();
+  });
+});
+
+test.describe('Buying highest rated item from cameras page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test.fail('Buying the highest rated item from cameras page - out of stock item', async ({ page }) => {
+    const homePage = new HomePage(page);
+    const cameraPage = new CameraPage(page);
+
+    await homePage.goToCameraPage();
+    await cameraPage.pickHighestRatedItem();
+    //wait for the page load
+    await page.waitForTimeout(2000);
+    await cameraPage.outOfStock.check();
+    await expect(cameraPage.outOfStock).toBeChecked();
+
+    await page.waitForTimeout(2000);
+    await expect(page.locator('//a[@class="text-ellipsis-2"]"]').first()).toContainText('iMac');
+    await page.locator('//a[@class="text-ellipsis-2"]"]').first().click();
+    let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
+    await expect(addBtn).toHaveText('Out of Stock');
+    await addBtn.click();
+  });
+
+  test('Buying the highest rated item from cameras page - in stock item', async ({ page }) => {
+    const homePage = new HomePage(page);
+    const cameraPage = new CameraPage(page);
+
+    await homePage.goToCameraPage();
+    await cameraPage.pickHighestRatedItem();
+    //wait for the page load
+    await page.waitForTimeout(2000);
+    await cameraPage.inStock.check();
+    await cameraPage.inStock.isChecked();
+
+    await page.waitForTimeout(2000);
+    await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toContainText('iMac');
+    await page.locator('//a[@class="text-ellipsis-2"]').first().click();
+    let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
+    await expect(addBtn).toHaveText('Add to Cart');
+    await addBtn.click();
+    await expect(page.locator('#notification-box-top')).toBeVisible();
   });
 });

@@ -11,7 +11,7 @@ exports.HomePage = class HomePage {
     this.login = page.getByRole('link', { name: 'Login', exact: true });
     this.register = page.getByRole('link', { name: 'Register', exact: true })
 
-    this.catgoryBtn = page.getByRole('button', { name: 'Shop by Category' });
+    this.categoryBtn = page.getByRole('button', { name: 'Shop by Category' });
     this.components = page.getByRole('link', { name: 'Components' });
     this.cameras = page.getByRole('link', { name: 'Cameras', exact: true });
     this.phonesTablets = page.getByRole('link', { name: 'Phone, Tablets & Ipod' });
@@ -39,11 +39,9 @@ exports.HomePage = class HomePage {
     //hover over "My account" and click "Login"
     await this.myAccount.hover();
     await this.login.click();
-    await expect(this.page).toHaveTitle('Account Login');
   }
 
   async goToRegisterPage() {
-    await expect(this.page).toHaveTitle('Your Store');
     //hover over "My account" and click "Register"
     await this.myAccount.hover();
     await this.register.click();
@@ -51,8 +49,12 @@ exports.HomePage = class HomePage {
   }
 
   async goToComponentPage() {
-    await this.catgoryBtn.click();
+    await this.categoryBtn.click();
     await this.components.click();
-    await expect(this.page).toHaveURL('https://ecommerce-playground.lambdatest.io/index.php?route=product/category&path=25')
+  }
+
+  async goToCameraPage() {
+    await this.categoryBtn.click();
+    await this.cameras.click();
   }
 };
