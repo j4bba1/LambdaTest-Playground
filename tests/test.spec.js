@@ -6,6 +6,19 @@ import { LoginPage } from '../pages/login-page';
 import { ComponentPage } from '../pages/component-page';
 import { describe } from 'node:test';
 import { CameraPage } from '../pages/camera-page';
+import { CartPage } from '../pages/cart-page';
+import { CheckoutPage } from '../pages/checkout-page';
+import { count, table } from 'console';
+import { ConfirmOrderPage } from '../pages/confirmOrder-page';
+
+const firstName = 'Wilfrid';
+const lastName = 'Coren';
+const email = 'wilfrid.coren@example.com';
+const phone = '+420 123 123 123';
+const password = 'password123';
+const passwordConfirm = 'password123';
+const newsletter = false;
+const agreePolicy = true;
 
 
 test.describe.skip('Registester new account and login with the registred data', () => {
@@ -13,14 +26,6 @@ test.describe.skip('Registester new account and login with the registred data', 
     await context.clearCookies();
   });
 
-  const firstName = 'Wilfrid';
-  const lastName = 'Coren';
-  const email = 'wilfrid.coren@example.com';
-  const phone = '+420 123 123 123';
-  const password = 'password123';
-  const passwordConfirm = 'password123';
-  const newsletter = false;
-  const agreePolicy = true;
   test.skip('Register new account', async ({ page }) => {
     const homePage = new HomePage(page);
     const registerPage = new RegisterPage(page);
@@ -77,9 +82,6 @@ test.describe.skip('Registester new account and login with the registred data', 
   });
 });
 
-
-test.describe.configure({ mode: 'parallel'})
-
 test.describe('Buying the cheapest items from components page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -92,11 +94,11 @@ test.describe('Buying the cheapest items from components page', () => {
     await homePage.goToComponentPage();
     await componentPage.pickCheapestItem();
     //wait for the page load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await componentPage.outOfStock.check();
     await componentPage.outOfStock.isChecked();
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('iPhone');
     await page.locator('//a[@class="text-ellipsis-2"]').first().click();
     let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
@@ -111,11 +113,11 @@ test.describe('Buying the cheapest items from components page', () => {
     await homePage.goToComponentPage();
     await componentPage.pickCheapestItem();
     //wait for the page load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await componentPage.inStock.check();
     await componentPage.inStock.isChecked();
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('Nikon D300');
     await page.locator('//a[@class="text-ellipsis-2"]').first().click();
     let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
@@ -136,15 +138,14 @@ test.describe('Buying highest rated item from cameras page', () => {
 
     await homePage.goToCameraPage();
     await cameraPage.pickHighestRatedItem();
-    //wait for the page load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await cameraPage.outOfStock.check();
-    await expect(cameraPage.outOfStock).toBeChecked();
+    await cameraPage.outOfStock.isChecked();
 
-    await page.waitForTimeout(2000);
-    await expect(page.locator('//a[@class="text-ellipsis-2"]"]').first()).toContainText('iMac');
-    await page.locator('//a[@class="text-ellipsis-2"]"]').first().click();
-    let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
+    await page.waitForTimeout(5000);
+    await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('iMac');
+    await page.locator('//a[@class="text-ellipsis-2"]').first().click();
+    let addBtn = page.locator('//button[@title="Add to Cart"]').nth(1);
     await expect(addBtn).toHaveText('Out of Stock');
     await addBtn.click();
   });
@@ -156,16 +157,230 @@ test.describe('Buying highest rated item from cameras page', () => {
     await homePage.goToCameraPage();
     await cameraPage.pickHighestRatedItem();
     //wait for the page load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await cameraPage.inStock.check();
     await cameraPage.inStock.isChecked();
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toContainText('iMac');
     await page.locator('//a[@class="text-ellipsis-2"]').first().click();
     let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
     await expect(addBtn).toHaveText('Add to Cart');
     await addBtn.click();
     await expect(page.locator('#notification-box-top')).toBeVisible();
+  });
+});
+
+test.describe('Applying coupon, taxes, gift certificate', () => {
+  test.beforeEach(async ({ page }) => {
+    const cartPage = new CartPage(page);
+
+    await cartPage.goTo();
+    await expect(page).toHaveTitle('Shopping Cart');
+  });
+
+  test.afterEach(async ({ page }) => {
+    const cartPage = new CartPage(page);
+
+    await cartPage.goToCheckout()
+    await expect(page).toHaveTitle('Checkout');
+  });
+
+  test('Use coupon code - invalid coupone', async ({ page }) => {
+    const cartPage = new CartPage(page);
+    const couponCode = "INVLAIDCODE";
+      
+    await cartPage.enterCoupon(couponCode);
+    await expect(page.getByText('Warning: Coupon is either')).toBeVisible();
+  });
+
+  test('Fill in shipping and taxes info', async ({ page }) => {
+    const cartPage = new CartPage(page);
+    const country = "Czech Republic";
+    const region = "Praha"
+    const postCode = "15000"
+
+    await cartPage.enterShipTaxes(country, region, postCode);
+    await expect(page.getByText('Success: Your shipping')).toBeVisible();
+  });
+
+  test('Use gift certificate code - invalid code', async ({ page }) => {
+    const cartPage = new CartPage(page);
+    const giftCode = "INVALIDGIFTCODE"
+
+    await cartPage.enterGift(giftCode);
+    await expect(page.getByText('Warning: Gift Certificate is')).toBeVisible();
+  });
+});
+
+test.describe('Filling checkout page', () => {
+  test.beforeEach(async ({ page }) => {
+    const checkoutPage = new CheckoutPage(page);
+
+    await checkoutPage.goTo();
+    await expect(page).toHaveTitle('Checkout');
+  });
+
+  test('Fill billing address', async ({ page }) => {
+    const checkoutPage = new CheckoutPage(page);
+
+    const company = ' ';
+    const address1 = 'Mojmírova 5';
+    const address2 = '';
+    const city = 'Prague';
+    const postCode = '13000';
+    const country = 'Czech Republic';
+    const region = 'Praha';
+
+    // Check checkbox "I want to use a new address"
+    // await checkoutPage.newAddress.check();
+
+    if(await checkoutPage.newAddress.isChecked() === true) {
+      await checkoutPage.fillBilling(firstName, lastName, company, address1, address2, city, postCode, country, region);
+    }
+
+    // Uncheck checkbox "My delivery and billing addresses are the same."
+    //await checkoutPage.sameAddressCheckBox.uncheck();
+
+    if(await checkoutPage.sameAddressCheckBox.isChecked() === false) {
+      await checkoutPage.fillShipping(firstName, lastName, company, address1, address2, city, postCode, country, region);
+    }
+
+    //adding comment
+    //let comment = ''
+    let comment = 'Testing comment 123 @& ů§ú)'
+
+    if(comment.length > 0) {
+      await checkoutPage.addComment(comment);
+    }
+
+    let checkTerms = true;
+    if(checkTerms) {
+      await checkoutPage.termCheckBox.check();
+      await expect(checkoutPage.termCheckBox).toBeChecked();
+      await checkoutPage.continueBtn.click();
+      await expect(page).toHaveTitle('Confirm Order');
+    } else {
+      await checkoutPage.continueBtn.click();
+      await expect(page.getByText('Warning: You must agree to')).toBeVisible();
+
+    };
+  });
+})
+
+test.describe('Veryfing data', () => {
+  test('Veryfing data - product name, adress, comment', async ({ page }) => {
+    const checkoutPage = new CheckoutPage(page);
+    const confirmOrder = new ConfirmOrderPage(page);
+
+    await checkoutPage.goTo();
+
+    if(await page.locator('#content').getByText('Your shopping cart is empty!').isVisible() === true) {
+      const homePage = new HomePage(page);
+      const componentPage = new ComponentPage(page);
+      const cameraPage = new CameraPage(page);
+  
+      await homePage.goToComponentPage();
+      await componentPage.pickCheapestItem();
+      //wait for the page load
+      await page.waitForTimeout(5000);
+      await componentPage.inStock.check();
+      await componentPage.inStock.isChecked();
+  
+      await page.waitForTimeout(5000);
+      await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toHaveText('Nikon D300');
+      await page.locator('//a[@class="text-ellipsis-2"]').first().click();
+      let addBtn = await page.locator('//button[@title="Add to Cart"]').nth(1);
+      await expect(addBtn).toHaveText('Add to Cart');
+      await addBtn.click();
+      await expect(page.locator('#notification-box-top')).toBeVisible();
+
+      await page.goto('/')
+
+      await homePage.goToCameraPage();
+      await cameraPage.pickHighestRatedItem();
+      //wait for the page load
+      await cameraPage.inStock.check();
+      await cameraPage.inStock.isChecked();
+
+      await page.waitForTimeout(5000);
+      await expect(page.locator('//a[@class="text-ellipsis-2"]').first()).toContainText('iMac');
+      await page.locator('//a[@class="text-ellipsis-2"]').first().click();
+      let addBtn2 = await page.locator('//button[@title="Add to Cart"]').nth(1);
+      await expect(addBtn2).toHaveText('Add to Cart');
+      await addBtn2.click();
+      await expect(page.locator('#notification-box-top')).toBeVisible();
+      await checkoutPage.goTo();
+    };
+
+    const company = ' ';
+    const address1 = 'Mojmírova 5';
+    const address2 = '';
+    const city = 'Prague';
+    const postCode = '13000';
+    const country = 'Czech Republic';
+    const region = 'Praha';
+
+    // Check checkbox "I want to use a new address"
+    // await checkoutPage.newAddress.check();
+
+    if(await checkoutPage.newAddress.isChecked() === true) {
+      await checkoutPage.fillBilling(firstName, lastName, company, address1, address2, city, postCode, country, region);
+    }
+
+    // Uncheck checkbox "My delivery and billing addresses are the same."
+    // await checkoutPage.sameAddressCheckBox.uncheck();
+    // Add new shipping address
+    // await checkoutPage.newShipAddress.check()
+
+    if(await checkoutPage.sameAddressCheckBox.isChecked() === false) {
+      const company = ' ';
+      const address1Ship = 'U Kříže 10';
+      const address2Ship = '';
+      const cityShip = 'Karlovy Vary';
+      const postCodeShip = '23100';
+      const countryShip = 'Czech Republic';
+      const regionShip = 'Karlovarský';
+      await checkoutPage.fillShipping(firstName, lastName, company, address1Ship, address2Ship, cityShip, postCodeShip, countryShip, regionShip);
+    }
+
+    //adding comment
+    //const comment = ''
+    const comment = 'Testing comment 123 @& ů§ú)'
+
+    if(comment.length > 0) {
+      await checkoutPage.addComment(comment);
+    }
+
+    await checkoutPage.termCheckBox.check();
+    await expect(checkoutPage.termCheckBox).toBeChecked();
+    await checkoutPage.continueBtn.click();
+    await expect(page).toHaveTitle('Confirm Order');
+
+    //veryfing product name
+    let productNames = [];
+    const expectedNames = ['Nikon D300', 'iMac'];
+    await confirmOrder.getProductNames(productNames);
+    for(let i = 0; i > expectedNames.length; i++) {
+      expect(productNames[i]).toEqual(expectedNames[i]);
+    }
+
+    //veryfing payment and shipping address
+    let isPaymentShippingAddress = true;
+    if (isPaymentShippingAddress) {
+      await expect(await confirmOrder.paymentAddress.textContent()).toEqual(await confirmOrder.shippingAddress.textContent());
+    } else {
+      await expect(await confirmOrder.paymentAddress.textContent()).not.toEqual(await confirmOrder.shippingAddress.textContent());
+    }
+
+    await expect(confirmOrder.orderComment).toHaveText(comment);
+
+    //click od "Edit" button
+    //await confirmOrder.editBtn.click();
+    //await expect(page).toHaveTitle('Checkout')
+
+    //finish the order
+    await confirmOrder.confirmBtn.click();
+    await expect(page).toHaveTitle('Your order has been placed!');
   });
 });

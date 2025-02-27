@@ -20,3 +20,4 @@ exports.LoginPage = class LoginPage {
     await this.loginBtn.click();
   };
 };
+
